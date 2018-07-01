@@ -1,29 +1,55 @@
 const app = new Vue({
     el: '#bookmarks',
     data: {
-        marks: []
+        marks: [],
+        filterText: '',
+        checked: false,
+        defaultProps: {
+            children: 'children',
+            label: 'label'
+        }
     },
-    beforeCreate: function () {
-        chrome.bookmarks.getTree(marks => {
-            this.dumpTreeNodes(marks);
+    created: function () {
+        chrome.bookmarks.getTree(markNodes => {
+            this.marks = this.dumpTreeNodes(markNodes)[0].children;
         });
+    },
+    watch: {
+        filterText(val) {
+            this.$refs.tree.filter(val);
+        }
     },
     methods: {
         dumpTreeNodes: function (markNodes) {
+            const tmpMarks = [];
             for (const node of markNodes) {
-                this.marks.push(this.dumpNode(node));
+                tmpMarks.push(this.dumpNode(node));
             }
+            return tmpMarks;
         },
         dumpNode: function (markNode) {
-            if (markNode.title) {
-                // mark
-                return markNode;
-            }
-            // tmp object
+            const node = {};
+            node.label = markNode.title || markNode.url;
+            node.id = markNode.id++;
+            node.url = markNode.url;
             const children = markNode.children;
             if (children && children.length > 0) {
-                this.dumpTreeNodes(children);
+                node.children = this.dumpTreeNodes(children);
             }
+            return node;
+        },
+        filterNode(value, data) {
+            if (!value) return true;
+            return data.label.indexOf(value) !== -1;
+        },
+        append(data) {
+            alert(JSON.stringify(data));
+        },
+
+        remove(node, data) {
+            alert(JSON.stringify(node));
+            alert(JSON.stringify(data));
         }
+
     }
 });
